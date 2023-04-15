@@ -1,96 +1,76 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Row, Col, Button, Form } from "react-bootstrap";
-import axios from "axios";
+import axios from 'axios';
+import React, { useEffect, useRef, useState } from 'react'
+import { Button, Col, Row, Form, Card } from 'react-bootstrap'
+import Book from './Book';
 
 const BookPage = () => {
-  const ref_query = useRef(null);
-  const [loading, setLoading] = useState(false);
-  const [books, setBooks] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [is_end, setIs_end] = useState(false);
-  const [query, setQuery] = useState("리액트");
+    const [list, setList] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [is_end, setIs_end] = useState(false);
+    const [query, setQuery] = useState('리액트');
 
-  const getBooks = async () => {
-    const url = "https://dapi.kakao.com/v3/search/book?target=title";
-    const config = {
-      headers: { Authorization: "KakaoAK 1516d2c502f56b88f702da4d62d772a5" },
-      params: { query: query, size: 6, page: page },
-    };
+    const getData = async() => {
+        const url="https://dapi.kakao.com/v3/search/book?target=title";
+        const config={
+            headers: {"Authorization": "KakaoAK b80880fbde422de3fd9b4a4e67c9bb54"},
+            params: {query: query, page:page, size:8}
+        }
+        setLoading(true);
+        const result= await axios.get(url, config);
+        console.log(result);
+        setList(result.data.documents);
+        setIs_end(result.data.meta.is_end);
+        setLoading(false);
+    }
 
-    setLoading(true);
-    const result = await axios.get(url, config);
-    setLoading(false);
-    setBooks(result.data.documents);
-    setTotal(result.data.meta.pageable_count);
-    setIs_end(result.data.meta.is_end);
+    const onSubmit = (e) => {
+        e.preventDefault();
+        setPage(1);
+        getData();
+    }
 
-    setLoading(false);
-    console.log(result);
+    useEffect(()=>{
+        getData();
+    }, [page]);
 
-    ref_query.current.focus();
-  };
-
-  useEffect(() => {
-    getBooks();
-  }, [page]);
-
-  if (loading) return <h1 className="text-center my-5">로딩중....</h1>;
-
-  const onSubmit = (e) => {
-    e.preventDefault();
-    getBooks();
-  };
-
-  return (
-    <Row className="my-5">
-      <Row>
-        <Col>
-          <Form onSubmit={onSubmit}>
-            <Form.Control
-              ref={ref_query}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="검색어"
-            />
-          </Form>
-        </Col>
-        <Col>검색 수 : {total}건</Col>
-      </Row>
-      <hr />
-      <Col>
-        <h1 className="text-center">도서검색</h1>
-
+    if(loading) return <h1 className='text-center my-5'>로딩중......</h1>
+    return (
         <Row>
-          {books.map((book) => (
-            <Col className="box m-2" key={book.isbn}>
-              <img
-                src={
-                  book.thumbnail
-                    ? book.thumbnail
-                    : "https://via.placeholder.com/120x170/"
-                }
-              />
-              <div className="ellipsis">{book.title}</div>
-              <div>{book.price}원</div>
-            </Col>
-          ))}
-          <div className="text-center my-3">
-            <Button
-              disabled={page === 1 ? true : false}
-              onClick={() => setPage(page - 1)}
-            >
-              이전
-            </Button>
-            <span className="mx-3">{page}</span>
-            <Button disabled={is_end && true} onClick={() => setPage(page + 1)}>
-              다음
-            </Button>
-          </div>
+            <h1 className='text-center my-5'>도서검색</h1>
+            <Row>
+                <Col md={4}>
+                    <Form onSubmit={onSubmit}>
+                        <Form.Control  
+                            onChange={(e)=>setQuery(e.target.value)}
+                            placeholder="검색어" value={query}/>
+                    </Form>
+                </Col>
+            </Row>
+            <Row>
+                {list.map(book=>
+                    <Col key={book.isbn} md={3} xs={6} className="my-2">
+                        <Card>
+                            <Card.Body>
+                                <img src={book.thumbnail}/>
+                                <div className='ellipsis'>{book.title}</div>
+                                <Book book={book}/>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                )}
+                <div className='text-center my-3'>
+                    <Button onClick={()=>setPage(page-1) }
+                        disabled = {page==1 && true}
+                        className="btn-sm">이전</Button>
+                    <spna className="px-3">{page}</spna>
+                    <Button onClick={()=>setPage(page+1) }
+                        disabled = {is_end && true}
+                        className="btn-sm">다음</Button>
+                </div>
+            </Row>
         </Row>
-      </Col>
-    </Row>
-  );
-};
+    )
+}
 
-export default BookPage;
+export default BookPage
